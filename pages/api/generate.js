@@ -16,7 +16,8 @@ const generateAction = async (req, res) => {
             }),
         }
     );
-    console.log(response);
+
+    // Check for different statuses to send proper payload
     if (response.ok) {
         const buffer = await response.arrayBuffer();
         res.status(200).json({ image: buffer });

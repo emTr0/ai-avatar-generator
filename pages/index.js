@@ -1,16 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import buildspaceLogo from '../assets/buildspace-logo.png';
 
 const Home = () => {
+  const maxRetries = 20;
   const [input, setInput] = useState('');
   const [img, setImg] = useState('');
+  const [retry, setRetry] = useState(0);
+  const [retryCount, setRetryCount] = useState(maxRetries);
+  const [isGenerating, setIsGenerating] = useState(false);
   const onChange = (event) => {
     setInput(event.target.value);
   };
   const generateAction = async () => {
     console.log('Generating...');
+
+    if (isGenerating && retry === 0) return;
+
+    setIsGenerating(true);
+
+    if (retry > 0) {
+      setRetryCount((prevState) => {
+        if (prevState === 0) {
+          return 0;
+        } else {
+          return prevState - 1;
+        }
+      });
+
+      setRetry(0);
+    }
 
     const response = await fetch('/api/generate', {
       method: 'POST',
@@ -23,17 +43,47 @@ const Home = () => {
     const data = await response.json();
 
     if (response.status === 503) {
-      console.log('Model is loading still :(.')
+      setRetry(data.estimated_time);
       return;
     }
 
     if (!response.ok) {
       console.log(`Error: ${data.error}`);
+      setIsGenerating(false);
       return;
     }
 
     setImg(data.image);
+    setIsGenerating(false);
   };
+
+  const sleep = (ms) => {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  };
+
+  useEffect(() => {
+    const runRetry = async () => {
+      if (retryCount === 0) {
+        console.log(`Model still loading after ${maxRetries} retries. Try request again in 5 minutes.`);
+        setRetryCount(maxRetries);
+        return;
+      }
+
+      console.log(`Trying again in ${retry} seconds.`);
+
+      await sleep(retry * 1000);
+
+      await generateAction();
+    };
+
+    if (retry === 0) {
+      return;
+    }
+
+    runRetry();
+  }, [retry]);
 
   return (
     <div className="root">
@@ -51,9 +101,18 @@ const Home = () => {
           <div className="prompt-container">
             <input className="prompt-box" value={input} onChange={onChange} />
             <div className="prompt-buttons">
-              <a className="generate-button" onClick={generateAction}>
+              <a
+                className={
+                  isGenerating ? 'generate-button loading' : 'generate-button'
+                }
+                onClick={generateAction}
+              >
                 <div className="generate">
-                  <p>Generate</p>
+                  {isGenerating ? (
+                    <span className="loader"></span>
+                  ) : (
+                    <p>Generate</p>
+                  )}
                 </div>
               </a>
             </div>
