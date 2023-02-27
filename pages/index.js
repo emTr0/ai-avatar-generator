@@ -10,6 +10,8 @@ const Home = () => {
   const [retry, setRetry] = useState(0);
   const [retryCount, setRetryCount] = useState(maxRetries);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [finalPrompt, setFinalPrompt] = useState('');
+
   const onChange = (event) => {
     setInput(event.target.value);
   };
@@ -32,6 +34,8 @@ const Home = () => {
       setRetry(0);
     }
 
+    const finalInput = input.replace(/emTr0/gi, 'emtr0');
+
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: {
@@ -52,7 +56,8 @@ const Home = () => {
       setIsGenerating(false);
       return;
     }
-
+    setFinalPrompt(input);
+    setInput('');
     setImg(data.image);
     setIsGenerating(false);
   };
@@ -88,7 +93,7 @@ const Home = () => {
   return (
     <div className="root">
       <Head>
-        <title>Movieception Generator | buildspace</title>
+        <title>Movieception Generator | AI Avatars</title>
       </Head>
       <div className="container">
         <div className="header">
@@ -96,7 +101,7 @@ const Home = () => {
             <h1>Movieception</h1>
           </div>
           <div className="header-subtitle">
-            <h2>Put me in your favorite movie! Make sure you refer to me as "emtr0" in the prompt.</h2>
+            <h2>Put me in your favorite movie! Make sure you refer to me as "emTr0" in the prompt.</h2>
           </div>
           <div className="prompt-container">
             <input className="prompt-box" value={input} onChange={onChange} />
@@ -118,6 +123,12 @@ const Home = () => {
             </div>
           </div>
         </div>
+        {img && (
+          <div className="output-content">
+            <Image src={img} width={512} height={512} alt={finalPrompt} />
+            <p>{finalPrompt}</p>
+          </div>
+        )}
       </div>
       <div className="badge-container grow">
         <a
