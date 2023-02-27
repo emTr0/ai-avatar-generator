@@ -16,7 +16,7 @@ const generateAction = async (req, res) => {
             }),
         }
     );
-
+    console.log(response);
     if (response.ok) {
         const buffer = await response.arrayBuffer();
         res.status(200).json({ image: buffer });
